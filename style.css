@@ -1,0 +1,6 @@
+body { max-width: 850px; margin: 40px auto; padding: 0 20px; font-family: Georgia, serif; line-height: 1.6; color: #000; background: #fff; }
+img { max-width: 100%; height: auto; }
+pre { overflow-x: auto; padding: 12px; border: 1px solid #000; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #000; padding: 6px; text-align: left; }
+a { color: inherit; }
