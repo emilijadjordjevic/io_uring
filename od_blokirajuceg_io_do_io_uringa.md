@@ -322,13 +322,13 @@ Testirali smo 8, 32 i 128 aktivnih konekcija, kao i 8 aktivnih uz 1000 neaktivni
 
 Slika 12. Veći stubić znači više vraćenih poruka u sekundi. Crte prikazuju najmanji i najveći rezultat tri pokretanja.
 
-Sa 8 aktivnih konekcija epoll je bio povoljniji: io_uring je vraćao 7,9% manje poruka od 64 B i 9,4% manje poruka od 4 KiB u sekundi. Za 64 B prosečno vreme odgovora bilo je 46,9 µs kod epoll-a i 50,9 µs kod io_uring-a. CPU vreme servera po poruci takođe je bilo manje kod epoll-a: 6,15 prema 6,80 µs.
+Sa 8 aktivnih konekcija epoll je bio bolji. io_uring je vraćao 7,9% manje poruka od 64 B i 9,4% manje poruka od 4 KiB u sekundi. Za poruke od 64 B epoll je imao i kraće prosečno vreme odgovora, 46,9 µs prema 50,9 µs, kao i manje CPU vreme servera po poruci, 6,15 µs prema 6,80 µs.
 
-Sa 32 aktivne konekcije razlika u protoku se smanjila: io_uring je zaostajao 3,4% za 64 B i 0,6% za 4 KiB. Sa 128 aktivnih konekcija io_uring je imao blagu prednost, od 1,1% i 0,5%. To su male razlike, pa ovde oba programa daju bliske rezultate. Dodavanje 1000 neaktivnih konekcija uz 8 aktivnih nije donelo prednost io_uring-u: njegov protok bio je 10,3% manji za 64 B i 13,6% manji za 4 KiB.
+Kako se broj aktivnih konekcija povećavao, prednost epoll-a se smanjivala. Sa 32 konekcije io_uring je zaostajao 3,4% za poruke od 64 B i 0,6% za poruke od 4 KiB. Sa 128 konekcija rezultat se promenio i io_uring je ostvario malu prednost, od 1,1% i 0,5%. Dodavanje 1000 neaktivnih konekcija uz 8 aktivnih nije mu pomoglo: njegov protok bio je 10,3% manji za poruke od 64 B i 13,6% manji za poruke od 4 KiB.
 
-Moguće objašnjenje je da mali broj aktivnih konekcija ostavlja malo operacija za grupisanje, dok io_uring i dalje priprema SQE zapise i obrađuje CQE rezultate. Sa više aktivnih konekcija raste mogućnost grupnog slanja, pa se razlika smanjuje. Test ne izdvaja pojedinačne troškove, zato ovo ostaje objašnjenje ponašanja, a ne dokaz njegovog uzroka.
+Zašto se rezultat menja sa brojem aktivnih konekcija? Kada ih je malo, nema mnogo operacija koje io_uring može da grupiše, ali i dalje postoji trošak pripreme SQE zapisa i obrade CQE rezultata. Sa više aktivnih konekcija ima više operacija koje se mogu poslati zajedno, pa taj trošak postaje manje značajan. To može objasniti zašto se prednost epoll-a prvo smanjuje, a zatim pri 128 konekcija prelazi u malu prednost io_uring-a. Ipak, test ne meri ove troškove odvojeno, pa ovo ostaje moguće objašnjenje, a ne dokazan uzrok.
 
-Za ovaj zadatak epoll je bolji izbor pri malom broju aktivnih konekcija; pri 128 io_uring pokazuje malu prednost u protoku. To nije univerzalno pravilo. Klijent je koristio približno 98–100% jednog CPU-a i može ograničiti rezultat. Test meri prosečno vreme odgovora preko localhost-a i CPU vreme procesa servera, ne fizičku mrežu ili ukupnu CPU potrošnju sistema.
+Za ovaj zadatak rezultati zato ukazuju da je epoll bolji pri malom broju aktivnih konekcija, dok io_uring pri 128 konekcija ostvaruje nešto veći protok. Ovaj zaključak važi samo za opisane uslove testa. Klijent je koristio približno 98–100% jednog CPU jezgra i mogao je da ograniči rezultat, a komunikacija je obavljana preko localhost-a. Test zato ne pokazuje nužno kako bi se ova dva pristupa ponašala preko fizičke mreže ili kada bi se merila ukupna CPU potrošnja sistema.
 
 [Sva pokretanja i izvorni podaci](https://github.com/emilijadjordjevic/io_uring/actions/runs/37431815130)
 
