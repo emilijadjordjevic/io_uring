@@ -312,21 +312,25 @@ cc -Wall -Wextra -O2 read_uring.c -luring -o read_uring
 
 Ovaj mali primer odmah čeka jednu operaciju. Pokazuje interfejs, ali ne koristi preklapanje: za to bi između slanja i čekanja trebalo obraditi drugi posao ili poslati dodatna čitanja.
 
-## 7. Predlog eksperimenata
+## 7. Eksperiment: epoll i io_uring na mreži
 
-### Eksperiment 1: čitanje fajla
+Uporedili smo `server_epoll.c` i `server_uring.c`: oba imaju jedan thread i vraćaju iste bajtove koje klijent pošalje. Isti `client.c` proverava odgovor i tek zatim šalje sledeću poruku na toj konekciji.
 
-Napravimo dva mala C programa. Prvi čita fajl običnim `pread()` pozivima i čeka rezultat svakog čitanja. Drugi zadaje čitanja preko `io_uring`-a. Njega pokrenemo sa najviše jednom, pa sa najviše 32 nezavršene operacije. Oba programa čitaju isti broj blokova od 4 KiB sa istih unapred nasumično izabranih pozicija. Koristimo isti dovoljno veliki, prethodno ispisan fajl i `O_DIRECT`, uz pravilno poravnate bafere, da page cache ne bi dominirao rezultatom.
+Testirali smo 8, 32 i 128 aktivnih konekcija, kao i 8 aktivnih uz 1000 neaktivnih, za poruke od 64 B i 4 KiB. Svako pokretanje obuhvata 4 miliona poruka. Svaki slučaj ponovljen je tri puta uz smenjivanje redosleda servera; prikazane su medijane, odnosno srednji rezultati tri pokretanja. Konekcije su otvorene pre merenja. Test je izvršen preko TCP-a na localhost-u, na GitHub Actions virtuelnoj mašini sa 4 logička CPU-a, prijavljenim procesorom AMD EPYC 9V45 i kernelom 6.17.0-1022-azure.
 
-Merimo broj završenih čitanja u sekundi, količinu pročitanih podataka, vreme čitanja i CPU potrošnju. Poređenje sa jednom operacijom pokazuje razliku između interfejsa pri istom broju zahteva u letu. Prelazak na 32 pokazuje koliko koristi donosi više nezavisnih čitanja. Grupno slanje testiramo odvojeno, menjajući broj SQE-ova koje šaljemo jednim pozivom uz isti maksimum od 32 operacije.
+![Broj vraćenih poruka u sekundi: epoll i io_uring](dijagrami/12_poredjenje_epoll_io_uring.png)
 
-### Eksperiment 2: epoll i io_uring na mreži
+Slika 12. Veći stubić znači više vraćenih poruka u sekundi. Crte prikazuju najmanji i najveći rezultat tri pokretanja.
 
-Napravimo dve verzije istog echo servera: klijent pošalje poruku, a server vrati iste bajtove. Obe verzije imaju jedan thread servera. Prva koristi `epoll` za spremnost socket-a, pa `recv()` i `send()` za prenos. Druga zadaje prijem i slanje preko `io_uring`-a i preuzima rezultate iz CQ-a. Obe moraju pravilno obrađivati prijem i slanje koji prenesu samo deo poruke.
+Sa 8 aktivnih konekcija epoll je bio povoljniji: io_uring je vraćao 7,9% manje poruka od 64 B i 9,4% manje poruka od 4 KiB u sekundi. Za 64 B prosečno vreme odgovora bilo je 46,9 µs kod epoll-a i 50,9 µs kod io_uring-a. CPU vreme servera po poruci takođe je bilo manje kod epoll-a: 6,15 prema 6,80 µs.
 
-Istim klijentskim programom uporedimo malo konekcija, mnogo uglavnom neaktivnih konekcija i mnogo aktivnih konekcija, na primer za poruke od 64 B i 4 KiB. Merimo broj vraćenih poruka u sekundi, vreme odgovora i CPU potrošnju. Tako proveravamo u kojim uslovima grupisanje operacija koristi `io_uring`-u i kada `epoll` daje jednak ili bolji rezultat.
+Sa 32 aktivne konekcije razlika u protoku se smanjila: io_uring je zaostajao 3,4% za 64 B i 0,6% za 4 KiB. Sa 128 aktivnih konekcija io_uring je imao blagu prednost, od 1,1% i 0,5%. To su male razlike, pa ovde oba programa daju bliske rezultate. Dodavanje 1000 neaktivnih konekcija uz 8 aktivnih nije donelo prednost io_uring-u: njegov protok bio je 10,3% manji za 64 B i 13,6% manji za 4 KiB.
 
-Svaki slučaj ponovimo više puta pod istim uslovima i zabeležimo hardver, kernel i parametre. Rezultate ne pretpostavljamo unapred: `io_uring` nije nužno brži za svaki workload.
+Moguće objašnjenje je da mali broj aktivnih konekcija ostavlja malo operacija za grupisanje, dok io_uring i dalje priprema SQE zapise i obrađuje CQE rezultate. Sa više aktivnih konekcija raste mogućnost grupnog slanja, pa se razlika smanjuje. Test ne izdvaja pojedinačne troškove, zato ovo ostaje objašnjenje ponašanja, a ne dokaz njegovog uzroka.
+
+Za ovaj echo zadatak epoll je bolji izbor pri malom broju aktivnih konekcija; pri 128 io_uring pokazuje malu prednost u protoku. To nije univerzalno pravilo. Klijent je koristio približno 98–100% jednog CPU-a i može ograničiti rezultat. Test meri prosečno vreme odgovora preko localhost-a i CPU vreme procesa servera, ne fizičku mrežu ili ukupnu CPU potrošnju sistema.
+
+[Sva pokretanja i izvorni podaci](https://github.com/emilijadjordjevic/io_uring/actions/runs/37431815130) dostupni su uz workflow.
 
 ## 8. Upotreba i izbor modela
 
