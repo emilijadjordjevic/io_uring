@@ -306,9 +306,11 @@ Ovaj mali primer odmah čeka jednu operaciju. Pokazuje interfejs, ali ne koristi
 
 ## 7. Eksperiment: poređenje mrežnih servera
 
-Uporedili smo dve verzije echo servera, server_epoll.c i server_uring.c, kako bismo proverili kako se epoll i io_uring ponašaju pri različitom broju konekcija. Oba servera koriste jedan thread i vraćaju iste bajtove koje prime od klijenta. Klijent proverava primljeni odgovor pre nego što na istoj konekciji pošalje sledeću poruku.
+Cilj eksperimenta bio je da se uporede performanse epoll i io_uring pristupa pri obradi većeg broja mrežnih konekcija. Zato su napravljene dve verzije jednostavnog echo servera, server_epoll.c i server_uring.c. Oba servera koriste jednu nit i klijentu vraćaju iste podatke koje su primili, ali mrežne operacije obrađuju različitim mehanizmima.
 
-Testirali smo 8, 32 i 128 aktivnih konekcija, kao i 8 aktivnih uz 1000 neaktivnih, za poruke od 64 B i 4 KiB. Prikazane su srednje vrednosti rezultata tri pokretanja. Konekcije su otvorene pre merenja. Test je izvršen na localhost-u.
+Isti program client.c korišćen je za testiranje oba servera. Na svakoj aktivnoj konekciji klijent šalje poruku, čeka i proverava odgovor, a zatim šalje sledeću. Neaktivne konekcije ostaju otvorene, ali ne razmenjuju podatke. Na taj način poredi se ponašanje servera pri različitom broju aktivnih konekcija, kao i uticaj prisustva velikog broja neaktivnih konekcija.
+
+Testovi su izvedeni sa 8, 32 i 128 aktivnih konekcija, kao i sa 8 aktivnih i 1000 neaktivnih konekcija. Korišćene su poruke veličine 64 B i 4 KiB. Konekcije su otvorene pre početka merenja, a komunikacija se odvijala preko localhost-a. Mereni su broj obrađenih poruka u sekundi, prosečno vreme odgovora i CPU vreme servera po poruci. Svaki test pokrenut je tri puta, a prikazane su srednje vrednosti rezultata.
 
 ![Broj vraćenih poruka u sekundi: epoll i io_uring](dijagrami/12_poredjenje_epoll_io_uring.png)
 
