@@ -304,9 +304,9 @@ close_file:
 
 Ovaj mali primer odmah čeka jednu operaciju. Pokazuje interfejs, ali ne koristi preklapanje: za to bi između slanja i čekanja trebalo obraditi drugi posao ili poslati dodatna čitanja.
 
-## 7. Eksperiment: epoll i io_uring na mreži
+## 7. Eksperiment: poređenje mrežnih servera
 
-Uporedili smo `server_epoll.c` i `server_uring.c`: oba imaju jedan thread i vraćaju iste bajtove koje klijent pošalje. Isti `client.c` proverava odgovor i tek zatim šalje sledeću poruku na toj konekciji.
+Uporedili smo dve verzije echo servera, server_epoll.c i server_uring.c, kako bismo proverili kako se epoll i io_uring ponašaju pri različitom broju konekcija. Oba servera koriste jedan thread i vraćaju iste bajtove koje prime od klijenta. Klijent proverava primljeni odgovor pre nego što na istoj konekciji pošalje sledeću poruku.
 
 Testirali smo 8, 32 i 128 aktivnih konekcija, kao i 8 aktivnih uz 1000 neaktivnih, za poruke od 64 B i 4 KiB. Prikazane su srednje vrednosti rezultata tri pokretanja. Konekcije su otvorene pre merenja. Test je izvršen na localhost-u.
 
