@@ -1,0 +1,79 @@
+name: epoll vs io_uring
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Compile
+        working-directory: code
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make liburing-dev
+          make
+
+      - name: Measure both servers
+        working-directory: code
+        shell: bash
+        run: |
+          set -euo pipefail
+          ulimit -n 4096
+          mkdir results
+          cd results
+          uname -a > environment.txt
+          lscpu >> environment.txt
+          gcc --version >> environment.txt
+          date -u >> environment.txt
+          git rev-parse HEAD >> environment.txt
+          sha256sum ../*.c >> environment.txt
+          cat /proc/sys/kernel/io_uring_disabled >> environment.txt
+          server_pid=""
+          trap 'if [ -n "$server_pid" ]; then kill "$server_pid" 2>/dev/null || true; fi' EXIT
+
+          for repeat in 1 2 3; do
+            order="server_epoll server_uring"
+            if [ "$repeat" = 2 ]; then order="server_uring server_epoll"; fi
+            while read -r active idle size messages; do
+              for server in $order; do
+                tag="${server}_${repeat}_${active}_${idle}_${size}"
+                ../"$server" "$active" "$idle" "$size" "$messages" > "$tag.log" 2>&1 &
+                server_pid=$!
+                for attempt in {1..100}; do
+                  if grep -q '^Cekam' "$tag.log"; then break; fi
+                  if ! kill -0 "$server_pid" 2>/dev/null; then cat "$tag.log"; exit 1; fi
+                  sleep 0.1
+                done
+                grep -q '^Cekam' "$tag.log"
+                timeout 180 ../client "$active" "$idle" "$size" "$messages" "client_${server}.txt"
+                wait "$server_pid"
+                server_pid=""
+              done
+            done <<'CASES'
+          8 0 64 500000
+          8 0 4096 500000
+          32 0 64 125000
+          32 0 4096 125000
+          128 0 64 31250
+          128 0 4096 31250
+          8 1000 64 500000
+          8 1000 4096 500000
+          CASES
+          done
+
+      - name: Save results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-results
+          path: code/results/
+          if-no-files-found: error
