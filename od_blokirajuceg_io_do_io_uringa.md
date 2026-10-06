@@ -316,7 +316,7 @@ Ovaj mali primer odmah čeka jednu operaciju. Pokazuje interfejs, ali ne koristi
 
 Uporedili smo `server_epoll.c` i `server_uring.c`: oba imaju jedan thread i vraćaju iste bajtove koje klijent pošalje. Isti `client.c` proverava odgovor i tek zatim šalje sledeću poruku na toj konekciji.
 
-Testirali smo 8, 32 i 128 aktivnih konekcija, kao i 8 aktivnih uz 1000 neaktivnih, za poruke od 64 B i 4 KiB. Svako pokretanje obuhvata 4 miliona poruka. Svaki slučaj ponovljen je tri puta uz smenjivanje redosleda servera; prikazane su medijane, odnosno srednji rezultati tri pokretanja. Konekcije su otvorene pre merenja. Test je izvršen preko TCP-a na localhost-u, na GitHub Actions virtuelnoj mašini sa 4 logička CPU-a, prijavljenim procesorom AMD EPYC 9V45 i kernelom 6.17.0-1022-azure.
+Testirali smo 8, 32 i 128 aktivnih konekcija, kao i 8 aktivnih uz 1000 neaktivnih, za poruke od 64 B i 4 KiB. Prikazane su srednje vrednosti rezultata tri pokretanja. Konekcije su otvorene pre merenja. Test je izvršen na localhost-u.
 
 ![Broj vraćenih poruka u sekundi: epoll i io_uring](dijagrami/12_poredjenje_epoll_io_uring.png)
 
@@ -330,7 +330,7 @@ Moguće objašnjenje je da mali broj aktivnih konekcija ostavlja malo operacija 
 
 Za ovaj echo zadatak epoll je bolji izbor pri malom broju aktivnih konekcija; pri 128 io_uring pokazuje malu prednost u protoku. To nije univerzalno pravilo. Klijent je koristio približno 98–100% jednog CPU-a i može ograničiti rezultat. Test meri prosečno vreme odgovora preko localhost-a i CPU vreme procesa servera, ne fizičku mrežu ili ukupnu CPU potrošnju sistema.
 
-[Sva pokretanja i izvorni podaci](https://github.com/emilijadjordjevic/io_uring/actions/runs/37431815130) dostupni su uz workflow.
+[Sva pokretanja i izvorni podaci](https://github.com/emilijadjordjevic/io_uring/actions/runs/37431815130)
 
 ## 8. Upotreba i izbor modela
 
@@ -342,7 +342,7 @@ Počeli smo od jednog threada koji čeka A i odlaže B. Dodatni thread omogućio
 
 Ovi pristupi zato ostaju korisni u različitim kombinacijama. Korist od `io_uring`-a najviše zavisi od toga koliko nezavisnih operacija aplikacija može da preklopi ili pošalje zajedno. Za niz zavisnih koraka blokirajući model može ostati sasvim dovoljan.
 
-## Literatura i dalje čitanje
+## Literatura
 
 - R. H. Arpaci-Dusseau i A. C. Arpaci-Dusseau, OSTEP: [I/O Devices](https://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/Book/file-devices.pdf) i [Event-Based Concurrency](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-events.pdf).
 - Shuveb Hussain, [Lord of the io_uring](https://unixism.net/loti/), naročito [What is io_uring?](https://unixism.net/loti/what_is_io_uring.html) — uvod u mentalni model i praktičan rad sa interfejsom.
