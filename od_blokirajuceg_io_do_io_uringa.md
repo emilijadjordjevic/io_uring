@@ -200,6 +200,8 @@ Tok izgleda ovako:
 
 Slika 9. Dok kernel organizuje čitanje B, isti thread servera može da obrađuje A. Posle čitanja dobija zapis sa rezultatom.
 
+[Poredjenje vremena](dijagrami/13.png)
+
 U osnovnoj upotrebi `io_uring_submit()` preko `io_uring_enter()` obaveštava kernel o spremnim zahtevima. To ne stvara automatski poseban thread za svako čitanje. Kernel može neke operacije izvršiti odmah, a druge nastaviti kada mogu da napreduju ili izvršiti preko svojih radnika. Aplikacija u svim tim slučajevima rezultat preuzima iz CQ-a.
 
 Ako su i mrežni prijemi zadati preko io_uring-a, isti thread iz CQ-a preuzima rezultate i tih prijema i čitanja fajlova. Ako još nema nijednog rezultata i nema drugog posla, može da čeka novu završenu operaciju. Kada rezultati stignu, preuzima ih i nastavlja odgovarajuće klijentske zahteve.
