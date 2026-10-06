@@ -294,14 +294,6 @@ close_file:
     return rc < 0;
 }
 ```
-
-Uz C razvojne alate i `liburing-dev` na Debian/Ubuntu sistemu:
-
-```sh
-cc -Wall -Wextra -O2 read_uring.c -luring -o read_uring
-./read_uring read_uring.c
-```
-
 - `io_uring_queue_init()` priprema redove i njihove resurse.
 - `io_uring_get_sqe()` daje slobodan SQE koji ćemo popuniti.
 - `io_uring_prep_read()` zadaje fajl, bafer, dužinu i početnu poziciju čitanja, ali još ne šalje zahtev.
