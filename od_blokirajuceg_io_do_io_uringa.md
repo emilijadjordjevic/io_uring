@@ -328,7 +328,7 @@ Sa 32 aktivne konekcije razlika u protoku se smanjila: io_uring je zaostajao 3,4
 
 Moguće objašnjenje je da mali broj aktivnih konekcija ostavlja malo operacija za grupisanje, dok io_uring i dalje priprema SQE zapise i obrađuje CQE rezultate. Sa više aktivnih konekcija raste mogućnost grupnog slanja, pa se razlika smanjuje. Test ne izdvaja pojedinačne troškove, zato ovo ostaje objašnjenje ponašanja, a ne dokaz njegovog uzroka.
 
-Za ovaj echo zadatak epoll je bolji izbor pri malom broju aktivnih konekcija; pri 128 io_uring pokazuje malu prednost u protoku. To nije univerzalno pravilo. Klijent je koristio približno 98–100% jednog CPU-a i može ograničiti rezultat. Test meri prosečno vreme odgovora preko localhost-a i CPU vreme procesa servera, ne fizičku mrežu ili ukupnu CPU potrošnju sistema.
+Za ovaj zadatak epoll je bolji izbor pri malom broju aktivnih konekcija; pri 128 io_uring pokazuje malu prednost u protoku. To nije univerzalno pravilo. Klijent je koristio približno 98–100% jednog CPU-a i može ograničiti rezultat. Test meri prosečno vreme odgovora preko localhost-a i CPU vreme procesa servera, ne fizičku mrežu ili ukupnu CPU potrošnju sistema.
 
 [Sva pokretanja i izvorni podaci](https://github.com/emilijadjordjevic/io_uring/actions/runs/37431815130)
 
