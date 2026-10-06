@@ -200,8 +200,6 @@ Tok izgleda ovako:
 
 Slika 9. Dok kernel organizuje čitanje B, isti thread servera može da obrađuje A. Posle čitanja dobija zapis sa rezultatom.
 
-[Poredjenje vremena](dijagrami/Screenshot from 2026-10-06 21-15-08.png)
-
 U osnovnoj upotrebi `io_uring_submit()` preko `io_uring_enter()` obaveštava kernel o spremnim zahtevima. To ne stvara automatski poseban thread za svako čitanje. Kernel može neke operacije izvršiti odmah, a druge nastaviti kada mogu da napreduju ili izvršiti preko svojih radnika. Aplikacija u svim tim slučajevima rezultat preuzima iz CQ-a.
 
 Ako su i mrežni prijemi zadati preko io_uring-a, isti thread iz CQ-a preuzima rezultate i tih prijema i čitanja fajlova. Ako još nema nijednog rezultata i nema drugog posla, može da čeka novu završenu operaciju. Kada rezultati stignu, preuzima ih i nastavlja odgovarajuće klijentske zahteve.
@@ -317,6 +315,10 @@ Testovi su izvedeni sa 8, 32 i 128 aktivnih konekcija, kao i sa 8 aktivnih i 100
 ![Broj vraćenih poruka u sekundi: epoll i io_uring](dijagrami/12_poredjenje_epoll_io_uring.png)
 
 Slika 12. Veći stubić znači više vraćenih poruka u sekundi. Crte prikazuju najmanji i najveći rezultat tri pokretanja.
+
+![Prosečno vreme odgovora: epoll i io_uring](dijagrami/Screenshot%20from%202026-10-06%2021-15-08.png)
+
+Slika 13. Niži stubić znači kraće prosečno vreme odgovora. Prikazana je medijana prosečnih vremena iz tri pokretanja; crte prikazuju najmanji i najveći rezultat.
 
 Sa 8 aktivnih konekcija epoll je bio bolji. io_uring je vraćao 7,9% manje poruka od 64 B i 9,4% manje poruka od 4 KiB u sekundi. Za poruke od 64 B epoll je imao i kraće prosečno vreme odgovora, 46,9 µs prema 50,9 µs, kao i manje CPU vreme servera po poruci, 6,15 µs prema 6,80 µs.
 
